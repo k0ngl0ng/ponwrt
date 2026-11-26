@@ -2,6 +2,9 @@
 # 首次启动自动创建 usb0 备用 WAN（插手机 USB 共享即上网，拔掉自动 down）
 [ -d /sys/class/net/usb0 ] || logger -t usbwan "usb0 暂不存在，配置照常写入，插上即生效"
 
+# 网页面板上传的文件是 0644，这里补回可执行位（rpcd 插件与 mihomo 安装器必需 +x）
+chmod 0755 /usr/libexec/rpcd/luci.airoha_npu /usr/bin/mihomo-install 2>/dev/null
+
 uci -q delete network.usbwan
 uci set network.usbwan=interface
 uci set network.usbwan.proto='dhcp'
