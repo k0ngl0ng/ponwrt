@@ -22,6 +22,7 @@ enum e_cpu_freq {
 #endif
 #if defined(TCSUPPORT_CPU_AN7583)
     cpu_freq_1300M,
+    cpu_freq_1400M,
 #endif
     cpu_freq_last
 };
