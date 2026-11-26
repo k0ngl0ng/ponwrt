@@ -150,6 +150,10 @@ define Build/Prepare
 
 	$(eval $(call Download,atf-airoha))
 	$(TAR) -C $(PKG_BUILD_DIR) --strip-components=1 -xf $(DL_DIR)/$(FILE)
+
+	# AN7583 1300MHz OPP support (local override, ATF commit is pinned)
+	$(INSTALL_DATA) ./src/ecnt_cpufreq.c $(PKG_BUILD_DIR)/plat/ecnt/en7523/ecnt_cpufreq.c
+	$(INSTALL_DATA) ./src/ecnt_cpufreq.h $(PKG_BUILD_DIR)/plat/ecnt/en7523/include/ecnt_cpufreq.h
 endef
 
 define Build/Compile/bl2
