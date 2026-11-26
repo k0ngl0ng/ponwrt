@@ -191,9 +191,11 @@ get_status() {
 	local govs_esc=$(json_escape "${cpu_avail_governors:-}")
 	local freqs_esc=$(json_escape "${cpu_avail_freqs:-}")
 	local src_esc=$(json_escape "${cpu_freq_source:-cpufreq}")
-	printf '{"npu_version":"%s","npu_loaded":%s,"npu_device":"%s","npu_clock":%d,"npu_cores":%d,"offload_bound":%d,"offload_total":%d,"memory_regions":%s,"cpu_cur_freq":%d,"cpu_hw_freq":%d,"cpu_governor":"%s","cpu_avail_governors":"%s","cpu_min_freq":%d,"cpu_max_freq":%d,"cpu_avail_freqs":"%s","cpu_count":%d,"pll_freq_mhz":%d,"cpu_freq_source":"%s","cpu_temp":%d}' \
+	local oc_avail="false"
+	soc_oc_supported && oc_avail="true"
+	printf '{"npu_version":"%s","npu_loaded":%s,"npu_device":"%s","npu_clock":%d,"npu_cores":%d,"offload_bound":%d,"offload_total":%d,"memory_regions":%s,"cpu_cur_freq":%d,"cpu_hw_freq":%d,"cpu_governor":"%s","cpu_avail_governors":"%s","cpu_min_freq":%d,"cpu_max_freq":%d,"cpu_avail_freqs":"%s","cpu_count":%d,"pll_freq_mhz":%d,"cpu_freq_source":"%s","cpu_temp":%d,"oc_available":"%s"}' \
 		"$npu_ver_esc" "$npu_loaded" "$npu_dev_esc" "${npu_clock:-0}" "${npu_cores:-0}" "${offload_bound:-0}" "${offload_total:-0}" "$regions" \
-		"${cpu_cur_freq:-0}" "${cpu_hw_freq:-0}" "$gov_esc" "$govs_esc" "${cpu_min_freq:-0}" "${cpu_max_freq:-0}" "$freqs_esc" "${cpu_count:-0}" "${pll_freq_mhz:-0}" "$src_esc" "${cpu_temp:-0}"
+		"${cpu_cur_freq:-0}" "${cpu_hw_freq:-0}" "$gov_esc" "$govs_esc" "${cpu_min_freq:-0}" "${cpu_max_freq:-0}" "$freqs_esc" "${cpu_count:-0}" "${pll_freq_mhz:-0}" "$src_esc" "${cpu_temp:-0}" "$oc_avail"
 }
 
 get_ppe_entries() {
@@ -292,7 +294,25 @@ set_max_freq() {
 	fi
 }
 
+# Direct PLL overclocking below is written against the EN7581 register map only.
+# On AN7583/EN7583 every offset differs (PCW lives at 0x1fa202ac, POSDIV at
+# 0x1fa202b8[20:18]) and 0x1fa201e0 is a CPU clock-GATING register, not a clock
+# mux. Writing it kills the CPU clock, the watchdog resets the board, and the
+# rollback path never executes. So refuse to run there at all.
+soc_oc_supported() {
+	local compat
+	compat=$(tr -d '\000' < /proc/device-tree/compatible 2>/dev/null)
+	case "$compat" in
+		*an7583*|*en7583*) return 1 ;;
+	esac
+	return 0
+}
+
 set_overclock() {
+	if ! soc_oc_supported; then
+		echo '{"error":"overclock disabled on this SoC: the panel drives EN7581 PLL registers, but 0x1fa201e0 is a clock gate here, so the CPU would hang. Change Max Frequency (OPP table) instead."}'
+		return
+	fi
 	local target_mhz
 	target_mhz=$(echo "$1" | jsonfilter -e "@.freq_mhz" 2>/dev/null)
 	if [ -z "$target_mhz" ]; then
