@@ -1,0 +1,25 @@
+#!/bin/sh
+# 安装 mihomo (Meta) arm64 内核到 OpenClash 内核目录
+# 用法: mihomo-install [版本号]     不填则用默认已验证版本
+VER="${1:-v1.19.34}"
+TMP=/tmp/mihomo-install.$$
+mkdir -p "$TMP" /etc/openclash/core || exit 1
+URL="https://github.com/MetaCubeX/mihomo/releases/download/${VER}/mihomo-linux-arm64-${VER}.gz"
+
+echo "下载 $URL"
+if ! wget -q -O "$TMP/mihomo.gz" "$URL"; then
+	echo "下载失败：检查网络，或用 $0 <其他版本号>"
+	rm -rf "$TMP"
+	exit 1
+fi
+
+gunzip -f "$TMP/mihomo.gz" || { rm -rf "$TMP"; exit 1; }
+BIN=$(ls "$TMP" | grep -v '\.gz$' | head -1)
+[ -n "$BIN" ] || { echo "解压后未找到二进制"; rm -rf "$TMP"; exit 1; }
+
+cp "$TMP/$BIN" /etc/openclash/core/clash_meta
+chmod +x /etc/openclash/core/clash_meta
+rm -rf "$TMP"
+
+echo "已安装：$(/etc/openclash/core/clash_meta -v 2>&1 | head -1)"
+echo "接着在 LuCI → 服务 → OpenClash → 配置文件管理 里导入订阅，然后启动。"
