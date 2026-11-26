@@ -77,11 +77,13 @@
 static unsigned char cpu_freq_config_pcw[]=     { 0x14, 0x16, 0x18, 0x1A, 0x1C, 0x1E, 0x20, 0x22, 0x24, 0x26, 0x14, 0x15, 0x16, 0x17, 0x18,
 #if defined(TCSUPPORT_CPU_AN7583)
                                                   0x1A,	/* 1300MHz: 26*50 */
+                                                  0x1C,	/* 1400MHz: 28*50 */
 #endif
                                                 };
 static unsigned char cpu_freq_config_posdiv[]=  {VAL_1,VAL_1,VAL_1,VAL_1,VAL_1,VAL_1,VAL_1,VAL_1,VAL_1,VAL_1,VAL_0,VAL_0,VAL_0,VAL_0,VAL_0,
 #if defined(TCSUPPORT_CPU_AN7583)
                                                   VAL_0,	/* 1300MHz */
+                                                  VAL_0,	/* 1400MHz */
 #endif
                                                 };
 static char *clk_src_name[]={"xtal(50MHz)","armpll(500~1200MHz)","pll1(540MHz)","pll2(400MHz)"};
@@ -98,6 +100,7 @@ static char *clk_src_name[]={"xtal(20/25MHz)","armpll(500~950MHz)","pll1(540MHz)
 static unsigned int  armpll_clk_MHz[]         = {  500,  550,  600,  650,  700,  750,  800,  850,  900,  950, 1000, 1050, 1100, 1150, 1200,
 #if defined(TCSUPPORT_CPU_AN7583)
                                                   1300,
+                                                  1400,
 #endif
                                                 };
 
